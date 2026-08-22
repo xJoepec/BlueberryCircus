@@ -13,14 +13,17 @@ from .constants import (Units, SI, BOHR, EPS0, HBAR, C, E_CHARGE, M_E, K_E,
                         ALPHA, A0, radiation_reaction_time,
                         setterfield_rescale)
 from . import (spectrum, oracles, observables, potentials, symplectic,
-               rectification, tournament)
+               rectification, tournament, conservation)
 from .spectrum import rho, spectral_density_Ex, mode_density, mode_energy
 from .zpf import ZPFBackground
 from .dynamics import Particle, Trajectory, integrate
 from .certify import Certificate, RULES, PASS, FAIL, NULL, audit_overclaim, \
     save_bundle, load_bundle
-from .program import (Program, Harmonic, Coulomb, ZPF, RadiationReaction,
+from .program import (Program, Harmonic, Coulomb, PowerLaw, Yukawa, Morse,
+                      Anharmonic, LennardJones, ZPF, RadiationReaction,
                       Operation)
+from .conservation import (energy_conservation_certificate,
+                           angular_momentum_conservation_certificate)
 from .engine import Engine, Result
 from .tournament import (OrbitState, EnergyLedger, TournamentConfig,
                          HypothesisResult)
@@ -31,11 +34,14 @@ __all__ = [
     "Units", "SI", "BOHR", "EPS0", "HBAR", "C", "E_CHARGE", "M_E", "K_E",
     "ALPHA", "A0", "radiation_reaction_time", "setterfield_rescale",
     "spectrum", "oracles", "observables", "potentials", "symplectic",
-    "rectification", "tournament", "rho", "spectral_density_Ex", "mode_density",
-    "mode_energy",
+    "rectification", "tournament", "conservation", "rho", "spectral_density_Ex",
+    "mode_density", "mode_energy",
     "ZPFBackground", "Particle", "Trajectory", "integrate", "Certificate",
     "RULES", "PASS", "FAIL", "NULL", "audit_overclaim", "save_bundle",
-    "load_bundle", "Program", "Harmonic", "Coulomb", "ZPF", "RadiationReaction",
-    "Operation", "Engine", "Result", "OrbitState", "EnergyLedger",
+    "load_bundle", "Program", "Harmonic", "Coulomb", "PowerLaw", "Yukawa",
+    "Morse", "Anharmonic", "LennardJones", "ZPF", "RadiationReaction",
+    "Operation", "energy_conservation_certificate",
+    "angular_momentum_conservation_certificate",
+    "Engine", "Result", "OrbitState", "EnergyLedger",
     "TournamentConfig", "HypothesisResult", "__version__",
 ]

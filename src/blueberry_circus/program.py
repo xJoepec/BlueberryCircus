@@ -32,8 +32,17 @@ class Operation:
         return self
 
 
+class _PotentialOp(Operation):
+    """Marker for ops that compile to a single binding potential.
+
+    ``compile()`` collects potential ops by this base rather than a hardcoded
+    ``(Harmonic, Coulomb)`` tuple, so new potential families are picked up
+    automatically. Every subclass must provide ``build_potential(units, mass)``.
+    """
+
+
 @dataclass
-class Harmonic(Operation):
+class Harmonic(_PotentialOp):
     omega0: float
 
     def build_potential(self, units: Units, mass: float):
@@ -41,13 +50,74 @@ class Harmonic(Operation):
 
 
 @dataclass
-class Coulomb(Operation):
+class Coulomb(_PotentialOp):
     Z: float = 1.0
     softening: float = 0.0
 
     def build_potential(self, units: Units, mass: float):
         return _pot.Coulomb(Z=self.Z, units=units, softening=self.softening,
                             mass=mass)
+
+
+@dataclass
+class PowerLaw(_PotentialOp):
+    """Central power law ``U = coeff * r**p`` (see :class:`potentials.PowerLaw`)."""
+    coeff: float
+    p: float
+    softening: float = 0.0
+
+    def build_potential(self, units: Units, mass: float):
+        return _pot.PowerLaw(coeff=self.coeff, p=self.p, mass=mass,
+                             softening=self.softening)
+
+
+@dataclass
+class Yukawa(_PotentialOp):
+    """Screened Coulomb ``U = -(g/r) exp(-r/lam)``."""
+    g: float = 1.0
+    lam: float = 1.0
+    softening: float = 0.0
+
+    def build_potential(self, units: Units, mass: float):
+        return _pot.Yukawa(g=self.g, lam=self.lam, mass=mass,
+                           softening=self.softening)
+
+
+@dataclass
+class Morse(_PotentialOp):
+    """Radial Morse well ``U = De (1 - e^{-a(r-re)})^2 - De``."""
+    De: float = 1.0
+    a: float = 1.0
+    re: float = 1.0
+    softening: float = 0.0
+
+    def build_potential(self, units: Units, mass: float):
+        return _pot.Morse(De=self.De, a=self.a, re=self.re, mass=mass,
+                          softening=self.softening)
+
+
+@dataclass
+class Anharmonic(_PotentialOp):
+    """Isotropic Duffing well ``U = 1/2 m w0^2 r^2 + 1/4 beta r^4``."""
+    omega0: float = 1.0
+    beta: float = 0.0
+    softening: float = 0.0
+
+    def build_potential(self, units: Units, mass: float):
+        return _pot.AnharmonicOscillator(omega0=self.omega0, beta=self.beta,
+                                         mass=mass, softening=self.softening)
+
+
+@dataclass
+class LennardJones(_PotentialOp):
+    """12-6 Lennard-Jones ``U = 4 eps [(sigma/r)^12 - (sigma/r)^6]``."""
+    eps: float = 1.0
+    sigma: float = 1.0
+    softening: float = 0.0
+
+    def build_potential(self, units: Units, mass: float):
+        return _pot.LennardJones(eps=self.eps, sigma=self.sigma, mass=mass,
+                                 softening=self.softening)
 
 
 @dataclass
@@ -139,7 +209,7 @@ class Program:
         passes.append("validate_single_particle")
         ops = self.ops_for(index)
 
-        pots = [op for op in ops if isinstance(op, (Harmonic, Coulomb))]
+        pots = [op for op in ops if isinstance(op, _PotentialOp)]
         if len(pots) != 1:
             raise ValueError(f"collect_potential: exactly one potential required "
                              f"for particle {index}, got {len(pots)}")
@@ -160,7 +230,7 @@ class Program:
         rr = reactions[0].build() if reactions else "none"
         passes.append("resolve_reaction")
 
-        handled = (Harmonic, Coulomb, ZPF, RadiationReaction)
+        handled = (_PotentialOp, ZPF, RadiationReaction)
         unknown = [op for op in ops if not isinstance(op, handled)]
         if unknown:
             raise TypeError(f"compile: unhandled operation(s) {unknown!r}")
